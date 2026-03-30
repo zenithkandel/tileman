@@ -1,33 +1,36 @@
 (function () {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.style = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;pointer-events:none;";
+    // Positioned in the top-right so it doesn't block the game's own UI
+    canvas.style = "position:fixed;top:20px;right:20px;width:300px;height:300px;z-index:10000;pointer-events:none;border:2px solid #00d4ff;background:rgba(8, 11, 18, 0.85);border-radius:8px;box-shadow: 0 0 15px rgba(0,212,255,0.3);";
     document.body.appendChild(canvas);
 
     let players = {};
-    let namesMap = {}; // Maps score/rank to names (best guess logic)
+    let namesMap = {};
 
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    window.addEventListener('resize', resize);
+    const resize = () => {
+        canvas.width = 300;
+        canvas.height = 300;
+    };
     resize();
 
     chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'PUT') {
-            const [id, x, y, dir, ts, unknown, lastX, lastY, trail] = msg.data;
-            if (!players[id]) players[id] = {};
+            const [id, x, y, dir, ts, unk, lx, ly, trail] = msg.data;
+            if (!players[id]) players[id] = { name: "Unknown" };
 
             players[id] = {
                 ...players[id],
                 x, y, dir,
-                trail: trail || [], // Capture the lines they are drawing
+                trail: trail || [],
                 lastUpdate: Date.now()
             };
         }
         else if (msg.type === 'LEADERBOARD') {
-            // The game usually sends leaderboard as a list. 
-            // We use this to keep a fresh list of active names.
+            // Mapping names to whatever data we have
             msg.data.forEach(p => {
-                namesMap[p.na] = p.sco;
+                // If we find a player with a matching score, we assign the name
+                namesMap[p.sco] = p.na;
             });
         }
         else if (msg.type === 'REMOVE') {
@@ -38,51 +41,49 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Draw Grid Lines for the Radar
+        ctx.strokeStyle = "rgba(0, 212, 255, 0.1)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 300; i += 50) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 300); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(300, i); ctx.stroke();
+        }
+
         const now = Date.now();
         for (const id in players) {
             const p = players[id];
-            if (now - p.lastUpdate > 3000) continue; // Cleanup old data
+            if (now - p.lastUpdate > 5000) continue;
 
-            // COORDINATE MAPPING
-            // tileman.io usually uses a coordinate system that needs scaling
-            // We'll use a 1:15 scale for this overlay
-            const screenX = (p.x * 15) % canvas.width;
-            const screenY = (p.y * 15) % canvas.height;
+            // SCALE LOGIC: Map game world to 300x300 radar
+            // Adjust the 0.8 factor if the map feels too zoomed in/out
+            const mapX = (p.x * 0.8) % 300;
+            const mapY = (p.y * 0.8) % 300;
 
-            // 1. DRAW TRAILS (The lines they are making)
+            // 1. Draw Player Trails on Radar
             if (p.trail && p.trail.length > 0) {
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
                 ctx.beginPath();
-                p.trail.forEach((point, i) => {
-                    const tx = (point[0] * 15) % canvas.width;
-                    const ty = (point[1] * 15) % canvas.height;
+                p.trail.forEach((pt, i) => {
+                    const tx = (pt[0] * 0.8) % 300;
+                    const ty = (pt[1] * 0.8) % 300;
                     if (i === 0) ctx.moveTo(tx, ty);
                     else ctx.lineTo(tx, ty);
                 });
                 ctx.stroke();
             }
 
-            // 2. DRAW PLAYER INDICATOR
-            ctx.fillStyle = (id == "28614") ? "#00FF00" : "#FF4444"; // Highlight specific ID if known
+            // 2. Draw Player Dot
+            const isMe = (p.dir !== undefined && p.dir !== 4 && id == "28614");
+            ctx.fillStyle = isMe ? "#39d353" : "#ff4f00";
             ctx.beginPath();
-            ctx.arc(screenX, screenY, 6, 0, Math.PI * 2);
+            ctx.arc(mapX, mapY, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // 3. DRAW TEXT (Name and ID)
+            // 3. Labels (ID & Name)
             ctx.fillStyle = "white";
-            ctx.font = "bold 12px Inter, sans-serif";
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = "black";
-
-            // Display ID and status
-            const status = p.dir === 4 ? "[PAUSED]" : "";
-            ctx.fillText(`ID: ${id} ${status}`, screenX + 10, screenY - 5);
-
-            // 4. DRAW COORDINATES
-            ctx.font = "9px JetBrains Mono";
-            ctx.fillStyle = "#00d4ff";
-            ctx.fillText(`X: ${Math.round(p.x)} Y: ${Math.round(p.y)}`, screenX + 10, screenY + 8);
+            ctx.font = "9px 'JetBrains Mono', monospace";
+            const displayName = namesMap[p.score] || `ID:${id}`;
+            ctx.fillText(displayName, mapX + 6, mapY - 2);
         }
         requestAnimationFrame(draw);
     }
