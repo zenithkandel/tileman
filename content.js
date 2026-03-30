@@ -22,6 +22,7 @@
 
     window.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'h') {
+            console.log("Homing to last trail point...");
             const me = players[myId];
             if (!me) return;
 
