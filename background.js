@@ -9,33 +9,25 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.debugger.onEvent.addListener((source, method, params) => {
   if (method === 'Network.webSocketFrameReceived') {
     const payload = params.response.payloadData;
-    if (payload.includes('["put"')) {
-      try {
-        const data = JSON.parse(payload.substring(payload.indexOf('[')));
-        // Send coordinates to content.js
-        chrome.tabs.sendMessage(source.tabId, {
-          type: 'RADAR_UPDATE',
-          player: {
-            id: data[1][0],
-            x: data[1][1],
-            y: data[1][2],
-            isMe: false
-          }
-        });
-      } catch (e) { }
-    }
-  }
+    const tabId = source.tabId;
 
-  if (method === 'Network.webSocketFrameSent') {
-    const payload = params.response.payloadData;
-    if (payload.includes('["1"')) {
-      try {
-        const data = JSON.parse(payload.substring(payload.indexOf('[')));
-        chrome.tabs.sendMessage(source.tabId, {
-          type: 'RADAR_UPDATE',
-          player: { x: data[1][1], y: data[1][2], isMe: true }
-        });
-      } catch (e) { }
-    }
+    try {
+      const jsonStr = payload.substring(payload.indexOf('['));
+      const data = JSON.parse(jsonStr);
+      const eventType = data[0];
+
+      // 1. Position Updates
+      if (eventType === "put") {
+        chrome.tabs.sendMessage(tabId, { type: 'PUT', data: data[1] });
+      }
+      // 2. Leaderboard (Names & Scores)
+      else if (eventType === "lr") {
+        chrome.tabs.sendMessage(tabId, { type: 'LEADERBOARD', data: data[1] });
+      }
+      // 3. Player Death/Removal
+      else if (eventType === "pr") {
+        chrome.tabs.sendMessage(tabId, { type: 'REMOVE', id: data[1].id });
+      }
+    } catch (e) { }
   }
 });
