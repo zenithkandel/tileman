@@ -29,19 +29,27 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   }
 });
 
-// NEW: Keyboard Injection Logic
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === "INJECT_KEY") {
-    const keyMap = { 0: 'ArrowUp', 1: 'ArrowRight', 2: 'ArrowDown', 3: 'ArrowLeft' };
-    const key = keyMap[msg.direction];
+    const tabId = sender.tab.id;
 
-    // This injects a native-like keyboard event into the page
-    chrome.debugger.sendCommand({ tabId: sender.tab.id }, "Runtime.evaluate", {
-      expression: `
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: '${key}', keyCode: ${msg.code}, bubbles: true }));
-      `
+    // 1. Press the key down
+    chrome.debugger.sendCommand({ tabId }, "Input.dispatchKeyEvent", {
+      type: "keyDown",
+      windowsVirtualKeyCode: msg.code,
+      nativeVirtualKeyCode: msg.code,
+      unmodifiedText: msg.text,
+      text: msg.text
     });
+
+    // 2. Release the key after a short delay (simulating a physical tap)
+    setTimeout(() => {
+      chrome.debugger.sendCommand({ tabId }, "Input.dispatchKeyEvent", {
+        type: "keyUp",
+        windowsVirtualKeyCode: msg.code,
+        nativeVirtualKeyCode: msg.code
+      });
+    }, 50);
   }
 });
-
 function parseData(p) { try { return JSON.parse(p.substring(p.indexOf('['))); } catch (e) { return null; } }

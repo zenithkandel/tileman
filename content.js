@@ -22,30 +22,38 @@
 
     window.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'h') {
-            console.log("Homing to last trail point...");
             const me = players[myId];
-            if (!me) return;
+            if (!me) {
+                console.log("Radar: Can't home, haven't identified 'YOU' yet.");
+                return;
+            }
 
             isHoming = true;
             const target = (me.trail && me.trail.length > 0) ? me.trail[0] : [me.x, me.y];
 
-            // 0:Up, 1:Right, 2:Down, 3:Left
-            let nextDir = 0;
-            let keyCode = 38;
+            let keyCode = 38; // Default Up
+            let keyChar = "";
 
+            // Logic to decide which key to "tap" based on coordinates
             if (Math.abs(me.x - target[0]) > 0.5) {
-                nextDir = me.x > target[0] ? 3 : 1;
-                keyCode = me.x > target[0] ? 37 : 39;
+                if (me.x > target[0]) { keyCode = 37; keyChar = "a"; } // Left/A
+                else { keyCode = 39; keyChar = "d"; } // Right/D
             } else if (Math.abs(me.y - target[1]) > 0.5) {
-                nextDir = me.y > target[1] ? 0 : 2;
-                keyCode = me.y > target[1] ? 38 : 40;
+                if (me.y > target[1]) { keyCode = 38; keyChar = "w"; } // Up/W
+                else { keyCode = 40; keyChar = "s"; } // Down/S
             }
 
-            chrome.runtime.sendMessage({ type: "INJECT_KEY", direction: nextDir, code: keyCode });
-            setTimeout(() => { isHoming = false; }, 800);
+            console.log("Radar: Injecting Hardware KeyCode", keyCode);
+
+            chrome.runtime.sendMessage({
+                type: "INJECT_KEY",
+                code: keyCode,
+                text: keyChar
+            });
+
+            setTimeout(() => { isHoming = false; }, 500);
         }
     });
-
     function draw() {
         ctx.clearRect(0, 0, 300, 300);
         const now = Date.now();
