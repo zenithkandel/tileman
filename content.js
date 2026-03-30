@@ -1,74 +1,73 @@
 (function () {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.style = "position:fixed;top:20px;right:20px;width:300px;height:300px;z-index:10000;pointer-events:none;border:2px solid #00d4ff;background:rgba(8, 11, 18, 0.9);border-radius:8px;transition: border-color 0.2s;";
-    document.body.appendChild(canvas);
+    // ... (Keep your existing Canvas and Player logic from the previous version) ...
 
-    let players = {};
-    let myId = null;
+    let myTrail = []; // Track our own active tail
+    let isAutoHoming = false;
 
+    // 1. Capture our own trail from the "self" update
     chrome.runtime.onMessage.addListener((msg) => {
-        if (msg.type === 'PUT') {
-            const [id, x, y, dir, ts, unk, lx, ly, trail] = msg.data;
-            if (!players[id]) players[id] = { id };
-            players[id] = { ...players[id], x, y, dir, trail: trail || [], lastUpdate: Date.now() };
-        }
-        else if (msg.type === 'LEADERBOARD') {
-            // Usually, the first entry in your 'put' updates or the top of the local log 
-            // is you. We can also try to find 'me' by looking for specific skin colors.
+        if (msg.type === 'RADAR_UPDATE') {
+            if (msg.source === 'self') {
+                const [dir, x, y, ts, id] = msg.data;
+                myId = id;
+                // Update our local knowledge of where we are
+                players[id] = { id, x, y, dir, isMe: true, lastUpdate: Date.now() };
+            }
+            // ... (rest of your existing msg listener) ...
         }
     });
 
+    // 2. Pathfinding Logic: "Safe Return"
+    function getHomePath(currentX, currentY) {
+        // This is a simplified 'greedy' grid search
+        // In Tileman, 'safe' blocks are where your trail ends/starts.
+        // For this example, we assume coordinate (0,0) is center/safe, 
+        // but you should replace this with your nearest captured block.
+        const targetX = 0;
+        const targetY = 0;
+
+        let moves = [];
+        if (currentX !== targetX) moves.push(currentX > targetX ? 3 : 1); // West or East
+        if (currentY !== targetY) moves.push(currentY > targetY ? 0 : 2); // North or South
+
+        return moves;
+    }
+
+    // 3. The "H" Key Trigger
+    window.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'h') {
+            const me = players[myId];
+            if (!me) return;
+
+            isAutoHoming = true;
+            const path = getHomePath(me.x, me.y);
+
+            if (path.length > 0) {
+                console.log("Auto-Home Initiated. Recommended Direction:", path[0]);
+
+                // Inject the move packet via the background script
+                // We send the first necessary direction to start the turn
+                chrome.runtime.sendMessage({
+                    type: "INJECT_PACKET",
+                    payload: `42/p,["1",[${path[0]}, ${me.x}, ${me.y}, ${Date.now()}, ${myId}]]`
+                });
+            }
+        }
+    });
+
+    // 4. Update the Draw Loop to show the "Home Path"
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // ... (existing radar draw code) ...
 
-        const now = Date.now();
-        let dangerDetected = false;
-        let me = Object.values(players).find(p => p.isMe) || players["28614"]; // Fallback to your ID
+        if (isAutoHoming) {
+            ctx.strokeStyle = "#39d353";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, 300, 300); // Flash radar green when active
 
-        for (const id in players) {
-            const p = players[id];
-            if (now - p.lastUpdate > 5000) continue;
-
-            const mapX = (p.x * 0.8) % 300;
-            const mapY = (p.y * 0.8) % 300;
-
-            // --- ADVANTAGE: PROXIMITY ALERT ---
-            if (me && id != me.id) {
-                const dist = Math.sqrt(Math.pow(me.x - p.x, 2) + Math.pow(me.y - p.y, 2));
-                if (dist < 40) dangerDetected = true; // Enemy is within 40 units
-            }
-
-            // Draw Trails
-            ctx.strokeStyle = (id == me?.id) ? "rgba(57, 211, 83, 0.4)" : "rgba(255, 79, 0, 0.3)";
-            ctx.beginPath();
-            p.trail.forEach((pt, i) => {
-                const tx = (pt[0] * 0.8) % 300;
-                const ty = (pt[1] * 0.8) % 300;
-                if (i === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
-            });
-            ctx.stroke();
-
-            // Draw Dots
-            ctx.fillStyle = (id == me?.id) ? "#39d353" : "#ff4f00";
-            ctx.shadowBlur = (id == me?.id) ? 10 : 0;
-            ctx.shadowColor = ctx.fillStyle;
-            ctx.beginPath();
-            ctx.arc(mapX, mapY, id == me?.id ? 5 : 4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // Labels
-            ctx.fillStyle = "white";
-            ctx.font = "bold 9px monospace";
-            ctx.fillText(id == me?.id ? "YOU" : `ID:${id}`, mapX + 8, mapY - 2);
-        }
-
-        // Update Radar Border based on Danger
-        canvas.style.borderColor = dangerDetected ? "#ff4f00" : "#00d4ff";
-        if (dangerDetected) {
-            ctx.fillStyle = "rgba(255, 79, 0, 0.1)";
-            ctx.fillRect(0, 0, 300, 300); // Slight red overlay when enemy is near
+            ctx.fillStyle = "#39d353";
+            ctx.font = "bold 12px monospace";
+            ctx.fillText("AUTO-HOMING ACTIVE", 10, 20);
         }
 
         requestAnimationFrame(draw);
