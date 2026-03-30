@@ -1,57 +1,44 @@
-// overlay.js
 (function () {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
-    // Styling the overlay
-    canvas.style.position = 'fixed';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.zIndex = '9999';
-    canvas.style.pointerEvents = 'none'; // Click through to the game
+    canvas.style = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;pointer-events:none;";
     document.body.appendChild(canvas);
 
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
+    const players = {};
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize);
     resize();
 
-    const players = {}; // Store player data locally
-
-    // Listen for data from background.js
     chrome.runtime.onMessage.addListener((msg) => {
-        if (msg.type === 'GAME_UPDATE') {
-            const [id, x, y, dir] = msg.data;
-            players[id] = { x, y, dir, lastUpdate: Date.now() };
-            draw();
+        if (msg.type === 'RADAR_UPDATE') {
+            const p = msg.player;
+            const id = p.isMe ? 'self' : p.id;
+            players[id] = { ...p, ts: Date.now() };
         }
     });
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Simple Radar/ESP Logic
+        // DRAW MINI-MAP BACKGROUND
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(20, 20, 200, 200);
+
         for (const id in players) {
             const p = players[id];
+            if (Date.now() - p.ts > 5000) continue; // Hide inactive players
 
-            // Map game coords to screen (Adjust 20 based on game zoom)
-            const screenX = (p.x * 20) % canvas.width;
-            const screenY = (p.y * 20) % canvas.height;
+            // Map game coords to the 200x200 mini-map
+            // Assuming map size is ~400 units, scale is 0.5
+            const mapX = 20 + (p.x * 0.5);
+            const mapY = 20 + (p.y * 0.5);
 
-            // Draw Player Indicator
-            ctx.fillStyle = id === 'me' ? '#00ff00' : '#ff0000';
+            ctx.fillStyle = p.isMe ? "#00FF00" : "#FF0000";
             ctx.beginPath();
-            ctx.arc(screenX, screenY, 8, 0, Math.PI * 2);
+            ctx.arc(mapX, mapY, 3, 0, Math.PI * 2);
             ctx.fill();
-
-            // Label
-            ctx.fillStyle = 'white';
-            ctx.font = '10px Monaco';
-            ctx.fillText(`ID: ${id}`, screenX + 10, screenY);
         }
+        requestAnimationFrame(draw);
     }
+    draw();
 })();
