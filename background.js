@@ -29,16 +29,18 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   }
 });
 
+// NEW: Keyboard Injection Logic
 chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.type === "INJECT_PACKET") {
-    // Attempt to find the socket automatically and emit
-    const expr = `
-      (function() {
-        const s = window.socket || window._socket || (window.io && window.io.sockets && Object.values(window.io.sockets)[0]);
-        if (s) s.emit("1", ${JSON.stringify(msg.payload)});
-      })()
-    `;
-    chrome.debugger.sendCommand({ tabId: sender.tab.id }, "Runtime.evaluate", { expression: expr });
+  if (msg.type === "INJECT_KEY") {
+    const keyMap = { 0: 'ArrowUp', 1: 'ArrowRight', 2: 'ArrowDown', 3: 'ArrowLeft' };
+    const key = keyMap[msg.direction];
+
+    // This injects a native-like keyboard event into the page
+    chrome.debugger.sendCommand({ tabId: sender.tab.id }, "Runtime.evaluate", {
+      expression: `
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '${key}', keyCode: ${msg.code}, bubbles: true }));
+      `
+    });
   }
 });
 
