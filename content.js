@@ -24,20 +24,23 @@
         if (e.key.toLowerCase() === 'h') {
             const me = players[myId];
             if (!me) return;
+
             isHoming = true;
             const target = (me.trail && me.trail.length > 0) ? me.trail[0] : [me.x, me.y];
 
-            let nextDir = me.dir;
+            // 0:Up, 1:Right, 2:Down, 3:Left
+            let nextDir = 0;
+            let keyCode = 38;
+
             if (Math.abs(me.x - target[0]) > 0.5) {
                 nextDir = me.x > target[0] ? 3 : 1;
+                keyCode = me.x > target[0] ? 37 : 39;
             } else if (Math.abs(me.y - target[1]) > 0.5) {
                 nextDir = me.y > target[1] ? 0 : 2;
+                keyCode = me.y > target[1] ? 38 : 40;
             }
 
-            chrome.runtime.sendMessage({
-                type: "INJECT_PACKET",
-                payload: [nextDir, me.x, me.y, Date.now(), myId]
-            });
+            chrome.runtime.sendMessage({ type: "INJECT_KEY", direction: nextDir, code: keyCode });
             setTimeout(() => { isHoming = false; }, 800);
         }
     });
@@ -48,8 +51,8 @@
         const me = players[myId];
         let danger = false;
 
-        Object.keys(players).forEach(playerId => {
-            const p = players[playerId];
+        Object.keys(players).forEach(pId => {
+            const p = players[pId];
             if (now - p.lastUpdate > 3000) return;
 
             const x = (p.x * SCALE) % 300;
@@ -59,10 +62,12 @@
 
             ctx.strokeStyle = p.isMe ? "#39d353" : "#ff4f00";
             ctx.beginPath();
-            p.trail.forEach((pt, i) => {
-                const tx = (pt[0] * SCALE) % 300, ty = (pt[1] * SCALE) % 300;
-                i === 0 ? ctx.moveTo(tx, ty) : ctx.lineTo(tx, ty);
-            });
+            if (p.trail) {
+                p.trail.forEach((pt, i) => {
+                    const tx = (pt[0] * SCALE) % 300, ty = (pt[1] * SCALE) % 300;
+                    i === 0 ? ctx.moveTo(tx, ty) : ctx.lineTo(tx, ty);
+                });
+            }
             ctx.stroke();
 
             ctx.fillStyle = p.isMe ? "#39d353" : "#ff4f00";
@@ -70,7 +75,7 @@
 
             ctx.fillStyle = "white";
             ctx.font = "9px monospace";
-            ctx.fillText(p.isMe ? "YOU" : `ID:${playerId}`, x + 8, y);
+            ctx.fillText(p.isMe ? "YOU" : `ID:${pId}`, x + 8, y);
         });
 
         canvas.style.borderColor = danger ? "#ff4f00" : (isHoming ? "#39d353" : "#00d4ff");
