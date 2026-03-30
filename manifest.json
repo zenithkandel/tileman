@@ -1,14 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "DevTools Pro",
+  "name": "Tileman DevTools",
   "version": "1.0.0",
-  "description": "Advanced DevTools with full network monitoring and Burp-style request interception.",
-  "permissions": [
-    "debugger",
-    "tabs",
-    "storage",
-    "scripting"
-  ],
+  "description": "Advanced DevTools for hacking in tileman",
+  "permissions": ["debugger", "tabs", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
   "devtools_page": "devtools.html",
   "background": {
