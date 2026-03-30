@@ -1,23 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "Tileman DevTools",
-  "version": "1.0.0",
-  "description": "Advanced DevTools for hacking in tileman",
-  "permissions": ["debugger", "tabs", "storage", "scripting"],
-  "host_permissions": ["<all_urls>"],
-  "devtools_page": "devtools.html",
+  "name": "Tileman Radar",
+  "version": "1.0",
+  "permissions": ["debugger", "tabs"],
+  "host_permissions": ["*://*.tileman.io/*"],
   "background": {
     "service_worker": "background.js"
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
   },
   "content_scripts": [
     {
       "matches": ["*://*.tileman.io/*"],
-      "js": ["overlay.js"],
+      "js": ["content.js"],
       "run_at": "document_end"
     }
   ]
