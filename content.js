@@ -20,46 +20,43 @@
         }
     });
 
-    // AUTO-HOME LOGIC
     window.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'h') {
             const me = players[myId];
             if (!me) return;
-
             isHoming = true;
-            // Target: Start of your trail (your last safe exit point)
-            const target = me.trail.length > 0 ? me.trail[0] : [0, 0];
+            const target = (me.trail && me.trail.length > 0) ? me.trail[0] : [me.x, me.y];
 
-            // Manhattan Distance Pathfinding (prevents diagonal death)
             let nextDir = me.dir;
-            if (Math.abs(me.x - target[0]) > 1) {
-                nextDir = me.x > target[0] ? 3 : 1; // 3: West, 1: East
-            } else if (Math.abs(me.y - target[1]) > 1) {
-                nextDir = me.y > target[1] ? 0 : 2; // 0: North, 2: South
+            if (Math.abs(me.x - target[0]) > 0.5) {
+                nextDir = me.x > target[0] ? 3 : 1;
+            } else if (Math.abs(me.y - target[1]) > 0.5) {
+                nextDir = me.y > target[1] ? 0 : 2;
             }
 
             chrome.runtime.sendMessage({
                 type: "INJECT_PACKET",
                 payload: [nextDir, me.x, me.y, Date.now(), myId]
             });
-
-            setTimeout(() => { isHoming = false; }, 1000);
+            setTimeout(() => { isHoming = false; }, 800);
         }
     });
 
     function draw() {
         ctx.clearRect(0, 0, 300, 300);
+        const now = Date.now();
         const me = players[myId];
         let danger = false;
 
-        Object.values(players).forEach(p => {
-            if (Date.now() - p.lastUpdate > 3000) return;
-            const x = (p.x * SCALE) % 300, y = (p.y * SCALE) % 300;
+        Object.keys(players).forEach(playerId => {
+            const p = players[playerId];
+            if (now - p.lastUpdate > 3000) return;
 
-            // Proximity Check
+            const x = (p.x * SCALE) % 300;
+            const y = (p.y * SCALE) % 300;
+
             if (me && !p.isMe && Math.hypot(me.x - p.x, me.y - p.y) < 60) danger = true;
 
-            // Draw Trail & Dot
             ctx.strokeStyle = p.isMe ? "#39d353" : "#ff4f00";
             ctx.beginPath();
             p.trail.forEach((pt, i) => {
@@ -70,7 +67,10 @@
 
             ctx.fillStyle = p.isMe ? "#39d353" : "#ff4f00";
             ctx.beginPath(); ctx.arc(x, y, p.isMe ? 5 : 4, 0, Math.PI * 2); ctx.fill();
-            ctx.fillText(p.isMe ? "YOU" : id, x + 8, y);
+
+            ctx.fillStyle = "white";
+            ctx.font = "9px monospace";
+            ctx.fillText(p.isMe ? "YOU" : `ID:${playerId}`, x + 8, y);
         });
 
         canvas.style.borderColor = danger ? "#ff4f00" : (isHoming ? "#39d353" : "#00d4ff");

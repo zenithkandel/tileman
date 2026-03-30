@@ -13,7 +13,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.debugger.onEvent.addListener((source, method, params) => {
   const tabId = source.tabId;
-
   if (method === 'Network.webSocketFrameReceived') {
     const payload = params.response.payloadData;
     if (payload.includes('["put"')) {
@@ -21,7 +20,6 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
       if (data) chrome.tabs.sendMessage(tabId, { type: 'RADAR_UPDATE', source: 'server', data: data[1] });
     }
   }
-
   if (method === 'Network.webSocketFrameSent') {
     const payload = params.response.payloadData;
     if (payload.includes('["1"')) {
@@ -31,13 +29,16 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   }
 });
 
-// Listener for the "H" key injection
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === "INJECT_PACKET") {
-    // This executes JS directly inside the game page to use the game's own socket
-    chrome.debugger.sendCommand({ tabId: sender.tab.id }, "Runtime.evaluate", {
-      expression: `if(window.socket) window.socket.emit("1", ${JSON.stringify(msg.payload)});`
-    });
+    // Attempt to find the socket automatically and emit
+    const expr = `
+      (function() {
+        const s = window.socket || window._socket || (window.io && window.io.sockets && Object.values(window.io.sockets)[0]);
+        if (s) s.emit("1", ${JSON.stringify(msg.payload)});
+      })()
+    `;
+    chrome.debugger.sendCommand({ tabId: sender.tab.id }, "Runtime.evaluate", { expression: expr });
   }
 });
 
