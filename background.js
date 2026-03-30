@@ -135,8 +135,8 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (connectedTabId !== null) {
       connections.delete(connectedTabId);
-      disableIntercept(connectedTabId).catch(() => {});
-      wsMonitorStop(connectedTabId).catch(() => {});
+      disableIntercept(connectedTabId).catch(() => { });
+      wsMonitorStop(connectedTabId).catch(() => { });
     }
   });
 });
@@ -149,11 +149,11 @@ async function ensureAttached(tabId) {
   if (!debuggerState.has(tabId)) {
     await chrome.debugger.attach({ tabId }, '1.3');
     debuggerState.set(tabId, {
-      fetchEnabled:   false,
-      noJsEnabled:    false,
+      fetchEnabled: false,
+      noJsEnabled: false,
       networkEnabled: false,
-      wsIntruding:    false,
-      wsScriptId:     null,
+      wsIntruding: false,
+      wsScriptId: null,
     });
   }
 }
@@ -162,7 +162,7 @@ async function detachIfIdle(tabId) {
   const st = debuggerState.get(tabId);
   if (!st) return;
   if (st.fetchEnabled || st.networkEnabled || st.wsIntruding) return;
-  try { await chrome.debugger.detach({ tabId }); } catch (_) {}
+  try { await chrome.debugger.detach({ tabId }); } catch (_) { }
   debuggerState.delete(tabId);
 }
 
@@ -194,19 +194,19 @@ async function disableIntercept(tabId) {
   await forwardAll(tabId);
 
   if (st.noJsEnabled) {
-    await cdp(tabId, 'Emulation.setScriptExecutionDisabled', { value: false }).catch(() => {});
+    await cdp(tabId, 'Emulation.setScriptExecutionDisabled', { value: false }).catch(() => { });
     st.noJsEnabled = false;
   }
 
-  await cdp(tabId, 'Fetch.disable', {}).catch(() => {});
+  await cdp(tabId, 'Fetch.disable', {}).catch(() => { });
   st.fetchEnabled = false;
   await detachIfIdle(tabId);
 }
 
 async function continueRequest(tabId, requestId, mods = {}) {
   const cmd = { requestId };
-  if (mods.url     !== undefined) cmd.url    = mods.url;
-  if (mods.method  !== undefined) cmd.method = mods.method;
+  if (mods.url !== undefined) cmd.url = mods.url;
+  if (mods.method !== undefined) cmd.method = mods.method;
   if (Array.isArray(mods.headers) && mods.headers.length) cmd.headers = mods.headers;
   if (mods.postData) cmd.postData = btoa(unescape(encodeURIComponent(mods.postData)));
   await cdp(tabId, 'Fetch.continueRequest', cmd);
@@ -224,7 +224,7 @@ async function forwardAll(tabId) {
     if (data.tabId === tabId) ids.push(rid);
   });
   for (const rid of ids) {
-    await cdp(tabId, 'Fetch.continueRequest', { requestId: rid }).catch(() => {});
+    await cdp(tabId, 'Fetch.continueRequest', { requestId: rid }).catch(() => { });
     interceptedRequests.delete(rid);
   }
 }
@@ -245,7 +245,7 @@ async function wsMonitorStop(tabId) {
   const st = debuggerState.get(tabId);
   if (!st || !st.networkEnabled) return;
   if (st.wsIntruding) await wsIntrudeDisable(tabId);
-  await cdp(tabId, 'Network.disable', {}).catch(() => {});
+  await cdp(tabId, 'Network.disable', {}).catch(() => { });
   st.networkEnabled = false;
   await detachIfIdle(tabId);
 }
@@ -303,7 +303,7 @@ async function wsIntrudeEnable(tabId) {
   const st = debuggerState.get(tabId);
   if (st.wsIntruding) return;
 
-  await cdp(tabId, 'Runtime.addBinding', { name: WS_BINDING }).catch(() => {});
+  await cdp(tabId, 'Runtime.addBinding', { name: WS_BINDING }).catch(() => { });
 
   const res = await cdp(tabId, 'Page.addScriptToEvaluateOnNewDocument', {
     source: WS_PATCH_SCRIPT,
@@ -312,12 +312,12 @@ async function wsIntrudeEnable(tabId) {
 
   await cdp(tabId, 'Runtime.evaluate', {
     expression: WS_PATCH_SCRIPT, silent: true,
-  }).catch(() => {});
+  }).catch(() => { });
 
   await cdp(tabId, 'Runtime.evaluate', {
     expression: 'if(window.__dtpWsSetIntercept__)window.__dtpWsSetIntercept__(true);',
     silent: true,
-  }).catch(() => {});
+  }).catch(() => { });
 
   st.wsIntruding = true;
 }
@@ -329,16 +329,16 @@ async function wsIntrudeDisable(tabId) {
   await cdp(tabId, 'Runtime.evaluate', {
     expression: 'if(window.__dtpWsSetIntercept__)window.__dtpWsSetIntercept__(false);',
     silent: true,
-  }).catch(() => {});
+  }).catch(() => { });
 
   if (st.wsScriptId) {
     await cdp(tabId, 'Page.removeScriptToEvaluateOnNewDocument', {
       identifier: st.wsScriptId,
-    }).catch(() => {});
+    }).catch(() => { });
     st.wsScriptId = null;
   }
 
-  await cdp(tabId, 'Runtime.removeBinding', { name: WS_BINDING }).catch(() => {});
+  await cdp(tabId, 'Runtime.removeBinding', { name: WS_BINDING }).catch(() => { });
   st.wsIntruding = false;
 }
 
@@ -346,18 +346,18 @@ async function wsForward(tabId, msgId) {
   await cdp(tabId, 'Runtime.evaluate', {
     expression: `if(window.__dtpWsForward__)window.__dtpWsForward__(${JSON.stringify(String(msgId))});`,
     silent: true,
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 async function wsDrop(tabId, msgId) {
   await cdp(tabId, 'Runtime.evaluate', {
     expression: `if(window.__dtpWsDrop__)window.__dtpWsDrop__(${JSON.stringify(String(msgId))});`,
     silent: true,
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 async function wsInjectSend(tabId, socketUrl, data) {
-  const safeUrl  = JSON.stringify(socketUrl);
+  const safeUrl = JSON.stringify(socketUrl);
   const safeData = JSON.stringify(data);
   const expr = `
     (function(){
@@ -370,7 +370,7 @@ async function wsInjectSend(tabId, socketUrl, data) {
       }
       return false;
     })()`;
-  await cdp(tabId, 'Runtime.evaluate', { expression: expr, silent: true }).catch(() => {});
+  await cdp(tabId, 'Runtime.evaluate', { expression: expr, silent: true }).catch(() => { });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -378,66 +378,66 @@ async function wsInjectSend(tabId, socketUrl, data) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 chrome.debugger.onEvent.addListener((source, method, params) => {
-  const tabId = source.tabId;
-  const port  = connections.get(tabId);
+  const port = connections.get(source.tabId);
+  if (!port) return;
 
   switch (method) {
+    // ... other cases like Fetch.requestPaused ...
 
-    // HTTP
-    case 'Fetch.requestPaused': {
-      interceptedRequests.set(params.requestId, { tabId });
-      let postData = '';
-      if (params.request.postData) {
-        try { postData = decodeURIComponent(escape(atob(params.request.postData))); }
-        catch { postData = params.request.postData; }
+    case 'Network.webSocketFrameReceived': {
+      const tabId = source.tabId;
+      const payload = params.response.payloadData;
+
+      // 1. Handle Incoming Player Positions (The "put" event)
+      if (payload.includes('["put"')) {
+        try {
+          const jsonStr = payload.substring(payload.indexOf('['));
+          const data = JSON.parse(jsonStr);
+          // data structure: ["put", [id, x, y, dir, ...]]
+          chrome.tabs.sendMessage(tabId, {
+            type: 'GAME_UPDATE',
+            source: 'server',
+            data: {
+              id: data[1][0],
+              x: data[1][1],
+              y: data[1][2],
+              dir: data[1][3]
+            }
+          });
+        } catch (e) { /* Ignore malformed packets */ }
       }
-      const headers = Object.entries(params.request.headers || {}).map(([name, value]) => ({ name, value }));
-      send(port, { type: 'REQUEST_PAUSED', requestId: params.requestId, url: params.request.url,
-        method: params.request.method, headers, postData, resourceType: params.resourceType, timestamp: Date.now() });
+
+      send(port, { type: 'WS_FRAME_RECEIVED', requestId: params.requestId, payload, timestamp: Date.now() });
       break;
     }
 
-    // WS lifecycle
-    case 'Network.webSocketCreated':
-      send(port, { type: 'WS_CREATED', requestId: params.requestId, url: params.url, timestamp: Date.now() });
-      break;
+    case 'Network.webSocketFrameSent': {
+      const tabId = source.tabId;
+      const payload = params.response.payloadData;
 
-    case 'Network.webSocketClosed':
-      send(port, { type: 'WS_CLOSED', requestId: params.requestId, timestamp: Date.now() });
-      break;
+      // 2. Handle Outgoing Movement (To identify "Self")
+      if (payload.includes('["1"')) {
+        try {
+          const jsonStr = payload.substring(payload.indexOf('['));
+          const data = JSON.parse(jsonStr);
+          // data structure: ["1", [dir, x, y, ts, id]]
+          chrome.tabs.sendMessage(tabId, {
+            type: 'GAME_UPDATE',
+            source: 'self',
+            data: {
+              x: data[1][1],
+              y: data[1][2],
+              dir: data[1][0]
+            }
+          });
+        } catch (e) { }
+      }
 
-    case 'Network.webSocketHandshakeResponseReceived':
-      send(port, { type: 'WS_HANDSHAKE', requestId: params.requestId,
-        status: params.response?.status, headers: params.response?.headers, timestamp: Date.now() });
-      break;
-
-    // WS frames
-    case 'Network.webSocketFrameSent':
-      send(port, { type: 'WS_FRAME_SENT', requestId: params.requestId,
-        data: params.response.payloadData, opcode: params.response.opcode,
-        timestamp: params.timestamp ? params.timestamp * 1000 : Date.now() });
-      break;
-
-    case 'Network.webSocketFrameReceived':
-      send(port, { type: 'WS_FRAME_RECEIVED', requestId: params.requestId,
-        data: params.response.payloadData, opcode: params.response.opcode,
-        timestamp: params.timestamp ? params.timestamp * 1000 : Date.now() });
-      break;
-
-    case 'Network.webSocketFrameError':
-      send(port, { type: 'WS_FRAME_ERROR', requestId: params.requestId,
-        errorMessage: params.errorMessage, timestamp: Date.now() });
-      break;
-
-    // WS intercept binding
-    case 'Runtime.bindingCalled': {
-      if (params.name !== WS_BINDING) break;
-      let payload;
-      try { payload = JSON.parse(params.payload); } catch { break; }
-      send(port, { type: 'WS_INTERCEPTED', msgId: payload.id, socketUrl: payload.url,
-        data: payload.data, dataType: payload.dataType, timestamp: Date.now() });
+      send(port, { type: 'WS_FRAME_SENT', requestId: params.requestId, payload, timestamp: Date.now() });
       break;
     }
+
+    // ... rest of your code (WS_FRAME_ERROR, Runtime.bindingCalled, etc)
   }
 });
 
@@ -463,5 +463,5 @@ function cdp(tabId, method, params) {
 
 function send(port, msg) {
   if (!port) return;
-  try { port.postMessage(msg); } catch (_) {}
+  try { port.postMessage(msg); } catch (_) { }
 }
