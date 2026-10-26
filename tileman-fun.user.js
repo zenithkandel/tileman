@@ -385,7 +385,6 @@
     const alive = ((now() - s.started) / 1000) | 0;
     const mm = (alive / 60) | 0, ss = alive % 60;
     const sz = state.world.sz || '?';
-    const pct = (state.me.x != null && state.world.sz) ? '' : '';
     pStats.innerHTML =
       'score <b>' + esc(txt('score') || '0') + '</b>   kills <b>' + esc(txt('kills') || '0') + '</b>\n' +
       'tiles <b>' + esc(txt('captured') || '—') + '</b>  rank <b>' + esc(txt('rank') || '—') + '</b>\n' +
@@ -394,7 +393,7 @@
       'pos <b>' + (state.me.x != null ? state.me.x.toFixed(1) + ',' + state.me.y.toFixed(1) : '—') + '</b>\n' +
       'session: K <b>' + s.kills + '</b> D <b>' + s.deaths + '</b> capt <b>' + s.captures + '</b> (' + s.tiles + ')\n' +
       'alive <b>' + mm + ':' + (ss < 10 ? '0' : '') + ss + '</b>  tracked <b>' + state.players.size + '</b> players\n' +
-      'tiles cached <b>' + state.territory.size + '</b>' + pct;
+      'tiles cached <b>' + state.territory.size + '</b>';
     pStats.style.whiteSpace = 'pre';
     const ld = document.getElementById('leaders');
     const leaders = panel.querySelector('#tmfun-leaders');
