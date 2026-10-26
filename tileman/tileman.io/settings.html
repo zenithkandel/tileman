@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Settings | tileman.io</title>
+	<link rel="canonical" href="https://tileman.io/settings.html">
+	<link rel="stylesheet"  href="/style.css">
+	<link rel="icon" href="/favicon.ico">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-130575008-1"></script>
+	<!--<script async src="/gtm.js"></script>-->
+	<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'UA-130575008-1');
+	gtag('config', 'G-7ZJH73V5VW');
+	</script>
+	<script src="/chroma.min.js"></script>
+	<link rel="preload" href="/tileman-blur-black.png"  as="image">
+</head>
+<body>
+	<div id=intro>
+		<h1>TileMan.io</h1>
+		<p><a href="/">Back to game</a></p>
+		<h2>Settings</h2>
+		<h3>Privacy</h3>
+		<script>
+		var aiptag = aiptag || {};
+		aiptag.cmd = aiptag.cmd || [];
+		aiptag.cmd.display = aiptag.cmd.display || [];	aiptag.cmd.player = aiptag.cmd.player || [];
+		</script>
+		<script async src="https://api.adinplay.com/libs/aiptag/pub/TMN/tileman.io/tag.min.js"></script>
+		<input type=button value="Change your consent" onclick="aipAPItag.showConsentToolSettings();">
+		<hr>
+		<h3>Colors and graphics</h3>
+		<p>Favorite colors for your player</p>
+		<div id=favcol>
+		<label>Select all <input type=checkbox id=colsel></label><br>
+		<div id=colors>
+		</div>
+		<div id=nosha><div><a id=sha1 href="https://www.facebook.com//sharer/sharer.php?u=tileman.io" target="_blank" onauxclick="localStorage.sha=true;">Share</a> or <a id=sha2 href="https://twitter.com//intent/tweet?hashtags=tilemanio&text=Play%20this%20game&url=http%3A%2F%2Ftileman.io" target="_blank" onauxclick="localStorage.sha=true;">Tweet</a> to unlock selecting of favorite colors for your player.</div></div>
+		</div>
+		<br>
+		<br>
+		<label>Colors lightness <input type=range id=clg2 value=0 min=-0.75 max=0.75 step=0.25></label><br>
+		<br>
+		<label>Grid color <input type=color id=bg></label> <input type=button value=Default onclick=rem("bg")><br>
+		<br>
+		<label>Wall color <input type=color id=bgwa></label> <input type=button value=Default onclick=rem("bgwa")><br>
+		<br>
+		<label>Color of unoccupied tiles <input type=color id=bgem></label> <input type=button value=Default onclick=rem("bgem")><br>
+		<br>
+		<label>Animation of tiles <input type=checkbox id=an></label><br>
+		<br>
+		<label>Enabled skins <input type=checkbox id=ski></label><br>
+		<br>
+		<label>Grid width <input type=range id=spa value=1 min=0 max=2 step=0.5></label><br>
+		<br>
+		<label>Graphics quality (resolution) <select id=ql><option value="1">High (default)</option><option value="0.75">Medium</option><option value="0.5">Low</option></select></label><br>
+		<br>
+		<hr>
+		<h3>Advanced</h3>
+		<label>Show player names <input type=checkbox id=pna></label><br>
+		<br>
+		<label>Censor words/strings in player names (one per line) <textarea id=cs2 maxlength=5000 rows=3 style="vertical-align: top;"></textarea></label><br>
+		<br>
+		<label>Old touch screen buttons <input type=checkbox id=tb></label><br>
+		<br>
+		<div hidden><label>Client-side movement <input type=checkbox id=cm></label><br>
+		<small>This is very usefull if you or server lag. Don't disable it!</small>
+		<br></div>
+		<label>Show your real (server) position as semi-transparent dot <input type=checkbox id=rp></label><br>
+		<small>Useful for testing.</small>
+		<br><br>
+		<button id=reset_set>Reset SETTINGS</button> 
+		<button id=reset_score>Reset HIGH SCORE</button>
+		
+		<br><br>
+	</div>
+	<script src="/hra.min.js"></script>
+	<!--<script src="https://static.getclicky.com/js" type="text/javascript"></script>
+	<script type="text/javascript">try{ clicky.init(101149435); }catch(e){}</script>
+	<noscript><p><img width="1" height="1" src="https://in.getclicky.com/101149435ns.gif" /></p></noscript>-->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"87c8ce72d25140bdaedcfe3c7323f022","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>

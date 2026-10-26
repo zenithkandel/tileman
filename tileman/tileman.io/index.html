@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!--
+	DONT
+	HACK
+	MY
+	GAME
+
+	( ͡° ͜ʖ ͡°)
+-->
+<html>
+<head><script src="/swload.js"></script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<link rel="manifest" href="/manifest.json">
+	<title>TileMan.io</title>
+	<meta name="description" content="Play against other players and expand your territory! Try different game modes in this io game!">
+	<meta name="robots" content="index, follow">
+	<link rel="canonical" href="https://tileman.io">
+
+	<meta property="og:type" content="game">
+	<meta property="og:title" content="TileMan.io">
+	<meta property="og:description" content="Play against other players and expand your territory! Try different game modes in this io game!">
+	<meta property="og:url" content="http://tileman.io">
+	<meta property="og:image" content="http://tileman.io/tileman-image2.png">
+	<meta name="twitter:card" content="summary_large_image">
+	<script type="application/ld+json"></script>
+
+	<link rel="stylesheet" href="/style.css">
+	<link rel="icon" href="/favicon.ico">
+
+	<script src="/socket.io.min.js"></script>
+	<script src="/hammer.min.js"></script>
+	<script src="/fi.min.js"></script>
+	<script src="/chroma.min.js"></script>
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-130575008-1"></script>
+	<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'UA-130575008-1');
+	gtag('config', 'G-7ZJH73V5VW');
+	gtag('set', {'dimension1' : "region",'dimension2' : "mode"} );
+	</script>
+	<!--<link rel="preconnect" href="//eu1.tileman.io/" crossorigin>
+	<link rel="preconnect" href="//usa.tileman.io/" crossorigin>
+	<link rel="preconnect" href="//asia.tileman.io/" crossorigin>-->
+	<link rel="preload" href="/tileman-blur-black.png" as="image">
+
+	<script>
+	var aiptag = aiptag || {};
+	aiptag.cmd = aiptag.cmd || [];
+	aiptag.cmd.display = aiptag.cmd.display || [];	aiptag.cmd.player = aiptag.cmd.player || [];
+	aiptag.gdprShowConsentTool = true;
+	</script>
+	<script>
+		var dynscript = document.createElement('script');
+		dynscript.src = (location.hostname.includes("crazygames")) ? "https://sdk.crazygames.com/crazygames-sdk-v2.js" : "https://api.adinplay.com/libs/aiptag/pub/TMN/tileman.io/tag.min.js";
+		dynscript.id="dyn-script";
+		document.head.appendChild(dynscript);
+	</script>
+</head>
+<body>
+	<div id=intro>
+		<div id=pcenter>
+			<h1>TileMan.io</h1>
+			<div id="invite-info"></div>
+			<div id=region2><button id=rgamerica type=button class=region>America</button><button id=rgeurope type=button class=region>Europe</button><button id=rgasia type=button class=region>East Asia</button></div>
+			<div id=mode2><button id=moclassic type=button class=mode>Classic</button><button id=mofast4x type=button class=mode>Extreme speed</button><button id=moblind type=button class=mode>No kills<!-- <span style="color:#aaf;font-size:0.6em;vertical-align:middle;font-weight:bold;">SPECIAL!</span>--></button><button id=morats type=button class=mode>Rats</button><button id=moarena type=button class=mode>Arena</button></div>
+			<div id=info></div>
+
+			<form id=playform method=post>
+				<input autocomplete="on" id=nick maxlength="20" placeholder="Nickname"><br>
+				<button id=play autofocus type=button>Play!</button><br>
+				<button id=invite type=button>Invite friends (copy link)</button>
+				<!--<p class=hidden data-txt="efgh">abc </p>-->
+			</form>
+			<div id=qwerty0>
+				<div id='tileman-io_300x600'></div>
+				<div id='tileman-io_300x250'></div>
+			</div>
+			<div id=links><a href="/">TileMan.io</a> | <a href="/leaderboard.html">Leaderboard</a> | <a href="/settings.html">Settings</a> | <a href="/about.html">About</a> | <a href="/contact.html">Contact</a> | <a href="/changelog.txt" target="_blank">Changelog</a></div>
+			<p><b>Keyboard:</b> Move - <b>WASD</b> or <b>arrows</b>. Stop - <b>E<span id=key-e></span></b> or <b>P<span id=key-p></span></b>. <br>Press <b>Space</b>, <b>Z<span id=key-z></span></b> and <b>X<span id=key-x></span></b> for communication.<br><b>Touch:</b> Swipe to move. Tap to stop.</p>
+			<p>Return to your area to expand your <b>territory</b>.</p>
+
+			<div id=q970x250><div id='tileman-io_970x250'></div></div>
+
+			<div id=social> <a href="https://discord.gg/FdkKWHr" target="_blank" class=dis-link>Discord</a> <a href="https://www.reddit.com/r/tilemanio/" target="_blank" class=red-link>Reddit</a></div>
+		</div>
+		<div class="bottom-ad adbanner" id=adt>&nbsp;</div>
+	</div>
+	<div id=game style="display:none">
+		<canvas id=canvas></canvas>
+
+		<div id=leftbottom class="corner_left">
+			<div id=blink_buttons><button id=heart>♡</button><button id=circle>◯</button><button id=skull><img src="/skull.png"></button></div>
+			<div id=player_stats>
+				<h3 id=player_name></h3>
+				<div><span class=stat_name>Score: </span><span id=score>0</span></div>
+				<div><span class=stat_name>Tiles: </span><span id=captured>0</span><span class=plusscore><span id=captcombo></span> <span id=captplus></span></span></div>
+				<div><span class=stat_name>Kills: </span><span id=kills>0</span><span class=plusscore><span id=killscombo></span></span></div>
+				<div><span class=stat_name>Rank: </span><span id=rank class=notranslate>0</span></div>
+			</div>
+		</div>
+		<div id=leaderboard class=corner>
+			<h3>Leaderboard</h3>
+			<ol id=leaders class=notranslate>
+			</ol>
+		</div>
+		<div id=timer class=corner>25</div>
+		<div id=performance_stats class="corner">
+			<div><span class=stat_name></span><span id=regname></span></div>
+			<div><span class=stat_name>FPS: </span><span id=fps>0</span></div>
+			<div><span class=stat_name>Latency: </span><span id=latency>0</span></div>
+			<div style="display:none"><span class=stat_name>To ser: </span><span id=latencytoserver>0</span></div>
+		</div>
+		<div id=title class="corner anim"></div>
+		<div id=touch>
+			<div id=up></div>
+			<div id=left></div>
+			<div id=right></div>
+			<div id=down></div>
+			<div id=pause></div>
+		</div>
+
+	</div>
+
+	<div id=overlay  style="display:none"></div>
+	<div id=after style="display:none">
+		<div id=after2>
+			<h3 id=info2></h3>
+			<table border=1 id=local_score2>
+				<tr>
+					<th></th>
+					<th>High score</th>
+					<th>Last game</th>
+				</tr>
+				<tr>
+					<td>Tiles</td>
+					<td id=bh>-</td>
+					<td id=bl>-</td>
+				</tr>
+				<tr>
+					<td>Kills</td>
+					<td id=kh>-</td>
+					<td id=kl>-</td>
+				</tr>
+				<tr>
+					<td>Time alive</td>
+					<td id=tih>-</td>
+					<td id=til>-</td>
+				</tr>
+				<tr>
+					<td>Snake length</td>
+					<td id=trh>-</td>
+					<td id=trl>-</td>
+				</tr>
+			</table>
+			<div class=buttons>
+				<button id=conti type=button>Continue</button>
+				<button id=spect type=button>Hide stats</button>
+			</div>
+			<div id=qwerty2>
+				<div id='tileman-io_970x250_2'></div>
+				<div id='tileman-io_300x250_2'></div>
+			</div>
+		</div>
+	</div>
+	<div id=preroll></div>
+	<div id="crazy"></div>
+	<script src="/adsbygoogle.js?"></script>
+	<script src="/hra.min.js?fu"></script>
+	<!--<script>var clicky_custom = clicky_custom || {};clicky_custom.visitor = {username: localStorage.n};</script>
+	<script src="https://static.getclicky.com/js"></script>
+	<script>try{ clicky.init(101149435); }catch(e){}</script>
+	<noscript><p><img width="1" height="1" src="https://in.getclicky.com/101149435ns.gif" /></p></noscript>-->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"87c8ce72d25140bdaedcfe3c7323f022","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
